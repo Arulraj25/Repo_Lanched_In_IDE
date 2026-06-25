@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CodeForge - IDE</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#0D1117;color:#fff;font-family:system-ui;height:100vh;overflow:hidden}
+        .navbar{background:#161B22;border-bottom:1px solid #30363D;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+        .btn{background:#238636;color:#fff;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:12px}
+        .btn-danger{background:#DA3633}
+        iframe{width:100%;height:calc(100vh - 50px);border:none}
+        .info{color:#8b949e;font-size:12px}
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <div>
+        <strong>⚡ CodeForge IDE</strong>
+        <span class="info" id="info">Loading...</span>
+    </div>
+    <button onclick="closeAndDestroy()" class="btn btn-danger">Close & Destroy Container</button>
+</div>
+<iframe id="ide-frame" src="about:blank"></iframe>
+
+<script>
+let workspaceId=null;
+let heartbeatInterval=null;
+
+async function api(url,opts={}){
+    let r=await fetch('/api'+url,{...opts,credentials:'same-origin',headers:{'Content-Type':'application/json'}});
+    if(!r.ok)throw new Error((await r.json()).error);
+    return r.json();
+}
+
+async function loadIDE(){
+    let repoId=window.location.pathname.split('/').pop();
+    try{
+        let result=await api('/workspace/create',{method:'POST',body:JSON.stringify({repo_id:repoId})});
+        workspaceId=result.workspace_id;
+        document.getElementById('ide-frame').src=result.vscode_url;
+        document.getElementById('info').innerHTML=`Workspace: ${workspaceId} | Send heartbeat every 30s`;
+        
+        // Send heartbeat every 30 seconds to keep container alive
+        heartbeatInterval=setInterval(async()=>{
+            try{
+                await api(`/workspace/heartbeat/${workspaceId}`,{method:'POST'});
+                console.log('Heartbeat sent');
+            }catch(e){
+                console.error('Heartbeat failed:',e);
+            }
+        },30000);
+        
+        // Monitor iframe unload (user closes tab)
+        window.addEventListener('beforeunload',()=>{
+            if(heartbeatInterval)clearInterval(heartbeatInterval);
+            navigator.sendBeacon(`/api/workspace/destroy/${workspaceId}`,JSON.stringify({}));
+        });
+    }catch(error){
+        document.getElementById('info').innerHTML=`Error: ${error.message}`;
+    }
+}
+
+async function closeAndDestroy(){
+    if(heartbeatInterval)clearInterval(heartbeatInterval);
+    if(workspaceId){
+        try{
+            await api(`/workspace/destroy/${workspaceId}`,{method:'POST'});
+            alert('Container destroyed!');
+        }catch(e){
+            console.error(e);
+        }
+    }
+    window.close();
+    // If window.close doesn't work, redirect to dashboard
+    window.location.href='/dashboard';
+}
+
+loadIDE();
+</script>
+</body>
+</html>

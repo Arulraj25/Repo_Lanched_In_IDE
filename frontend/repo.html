@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>CodeForge - Repository</title><style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0D1117;color:#fff;font-family:monospace;padding:20px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #30363D}.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;margin:5px}.btn-primary{background:#238636;color:#fff}.btn-danger{background:#DA3633;color:#fff}.btn-secondary{background:#21262D;color:#fff;border:1px solid #30363D}.workspace-card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:20px;margin-top:20px}.status-running{color:#3fb950}.status-stopped{color:#f85149}.toast{position:fixed;bottom:20px;right:20px;background:#238636;padding:12px 20px;border-radius:8px;z-index:1000}.loading{text-align:center;padding:40px}
+</style>
+</head>
+<body>
+<div class="header"><h2>⚡ CodeForge</h2><button onclick="goBack()" class="btn btn-secondary">← Back to Dashboard</button></div>
+<div id="content">Loading...</div>
+<script>
+let repoData=null;let workspaceData=null;
+async function api(url,opts={}){let r=await fetch('/api'+url,{...opts,credentials:'same-origin',headers:{'Content-Type':'application/json'}});if(!r.ok)throw new Error((await r.json()).error);return r.json()}
+function showToast(msg,isError=false){let t=document.createElement('div');t.className='toast';t.textContent=msg;if(isError)t.style.background='#DA3633';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+async function load(){let repoId=window.location.pathname.split('/').pop();try{repoData=await api(`/repo/${repoId}`);workspaceData=repoData.workspace;render();}catch(error){document.getElementById('content').innerHTML=`<div class="loading">Error: ${error.message}</div>`;}}
+function render(){let workspaceHtml='';if(workspaceData&&workspaceData.exists){workspaceHtml=`<div class="workspace-card"><h3>🚀 VS Code Workspace <span class="status-running">● ${workspaceData.status}</span></h3><button class="btn btn-primary" onclick="openIDE()">Open VS Code</button><button class="btn btn-secondary" onclick="stopWorkspace()">Stop</button><button class="btn btn-danger" onclick="deleteWorkspace()">Delete</button></div>`;}else{workspaceHtml=`<div class="workspace-card"><h3>🚀 VS Code Workspace</h3><p>No active workspace</p><button class="btn btn-primary" onclick="createWorkspace()">Create Workspace</button></div>`;}
+document.getElementById('content').innerHTML=`<div><h2>📦 ${repoData.full_name}</h2><p>${repoData.description||'No description'}</p><a href="${repoData.html_url}" target="_blank" style="color:#58A6FF">View on GitHub →</a>${workspaceHtml}</div>`;}
+async function createWorkspace(){showToast('Creating workspace...');try{let result=await api('/workspace/create',{method:'POST',body:JSON.stringify({repo_id:repoData.id})});workspaceData={exists:true,status:'running',vscode_url:result.vscode_url,workspace_id:result.workspace_id};render();showToast('Workspace created!');setTimeout(()=>openIDE(),2000);}catch(error){showToast('Error: '+error.message,true);}}
+function openIDE(){if(workspaceData&&workspaceData.vscode_url){window.open(workspaceData.vscode_url,'_blank');}}
+async function stopWorkspace(){if(!workspaceData||!workspaceData.workspace_id)return;showToast('Stopping...');try{await api(`/workspace/stop/${workspaceData.workspace_id}`,{method:'POST'});workspaceData.status='stopped';render();showToast('Workspace stopped');}catch(error){showToast('Error: '+error.message,true);}}
+async function deleteWorkspace(){if(!confirm('Delete workspace? All unsaved changes will be lost.'))return;if(!workspaceData||!workspaceData.workspace_id)return;showToast('Deleting...');try{await api(`/workspace/delete/${workspaceData.workspace_id}`,{method:'DELETE'});workspaceData=null;render();showToast('Workspace deleted');}catch(error){showToast('Error: '+error.message,true);}}
+function goBack(){window.location.href='/dashboard';}
+load();
+</script>
+</body>
+</html>

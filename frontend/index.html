@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CodeForge - Ephemeral Development Environments</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#0D1117;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+        .container{max-width:800px;margin:0 auto;padding:60px 20px;text-align:center}
+        h1{font-size:64px;background:linear-gradient(135deg,#58A6FF,#D2A8FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px}
+        .subtitle{font-size:20px;color:#8b949e;margin-bottom:40px}
+        .btn{background:#238636;color:#fff;padding:14px 32px;text-decoration:none;border-radius:8px;display:inline-block;font-size:16px;font-weight:500;transition:all 0.3s}
+        .btn:hover{background:#2ea043;transform:translateY(-2px)}
+        .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:60px;text-align:left}
+        .feature{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:20px}
+        .feature h3{color:#58A6FF;margin-bottom:10px}
+        .feature p{color:#8b949e;font-size:14px;line-height:1.6}
+        .emoji{font-size:32px;margin-bottom:10px}
+        footer{margin-top:60px;color:#8b949e;font-size:12px}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚡ CodeForge</h1>
+    <div class="subtitle">VS Code in your browser. Ephemeral. Fast. Free.</div>
+    <a href="/auth/github" class="btn">🚀 Sign in with GitHub</a>
+    
+    <div class="features">
+        <div class="feature">
+            <div class="emoji">🚀</div>
+            <h3>One-Click IDE</h3>
+            <p>Open any GitHub repository in VS Code instantly</p>
+        </div>
+        <div class="feature">
+            <div class="emoji">🗑️</div>
+            <h3>Ephemeral</h3>
+            <p>Containers auto-destroy when you close the tab</p>
+        </div>
+        <div class="feature">
+            <div class="emoji">💨</div>
+            <h3>Auto Cleanup</h3>
+            <p>Idle containers destroyed after 5 minutes</p>
+        </div>
+    </div>
+    <footer>Powered by Docker & code-server</footer>
+</div>
+</body>
+</html>
