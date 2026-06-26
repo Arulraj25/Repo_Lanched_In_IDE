@@ -6,13 +6,30 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
-app = Flask(__name__, static_folder='../frontend')
+
+# Get the absolute path to the project root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_PATH = os.path.join(PROJECT_ROOT, 'frontend')
+DATA_PATH = os.path.join(PROJECT_ROOT, 'data')
+
+# Create necessary directories
+os.makedirs(DATA_PATH, exist_ok=True)
+os.makedirs(FRONTEND_PATH, exist_ok=True)
+
+# Use absolute paths for Flask
+app = Flask(__name__, 
+            static_folder=FRONTEND_PATH,
+            static_url_path='',
+            instance_path=DATA_PATH,
+            instance_relative_config=True)
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../codeforge.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(DATA_PATH, "codeforge.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-REPO_CHANGES_DIR = os.path.join(os.path.dirname(__file__), '../.codeforge_changes')
+# Fix: Changed path for changes directory
+REPO_CHANGES_DIR = os.path.join(PROJECT_ROOT, '.codeforge_changes')
 os.makedirs(REPO_CHANGES_DIR, exist_ok=True)
 
 class User(db.Model):
@@ -78,7 +95,12 @@ def github_login():
     client_id = os.getenv('GITHUB_CLIENT_ID')
     if not client_id:
         return "Error: GITHUB_CLIENT_ID not configured", 500
-    return redirect(f'https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri=http://localhost:5000/auth/github/callback&scope=repo,user')
+    
+    host = os.getenv('BACKEND_HOST', 'localhost')
+    port = os.getenv('BACKEND_PORT', '5000')
+    redirect_uri = f"http://{host}:{port}/auth/github/callback"
+    
+    return redirect(f'https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo,user')
 
 @app.route('/auth/github/callback')
 def github_callback():
@@ -89,6 +111,7 @@ def github_callback():
     client_id = os.getenv('GITHUB_CLIENT_ID')
     client_secret = os.getenv('GITHUB_CLIENT_SECRET')
     
+    # Exchange code for access token
     resp = requests.post('https://github.com/login/oauth/access_token',
         json={'client_id': client_id, 'client_secret': client_secret, 'code': code},
         headers={'Accept': 'application/json'})
@@ -96,22 +119,42 @@ def github_callback():
     token_data = resp.json()
     token = token_data.get('access_token')
     
-    user_resp = requests.get('https://api.github.com/user', headers={'Authorization': f'token {token}'})
+    if not token:
+        return f"Error: Failed to get access token: {token_data}", 400
+    
+    # Get user data
+    user_resp = requests.get('https://api.github.com/user', 
+                            headers={'Authorization': f'token {token}'})
+    
+    if user_resp.status_code != 200:
+        return f"Error: Failed to get user data: {user_resp.status_code}", 400
+    
     user_data = user_resp.json()
     
+    # Check if user data has id
+    if 'id' not in user_data:
+        return f"Error: Invalid user data: {user_data}", 400
+    
+    # Find or create user
     user = User.query.filter_by(github_id=str(user_data['id'])).first()
     if not user:
         user = User(
             github_id=str(user_data['id']), 
-            username=user_data['login'],
-            name=user_data.get('name', user_data['login']), 
-            avatar_url=user_data['avatar_url'], 
+            username=user_data.get('login', 'unknown'),
+            name=user_data.get('name', user_data.get('login', 'unknown')), 
+            avatar_url=user_data.get('avatar_url', ''), 
             github_token=token
         )
         db.session.add(user)
         db.session.commit()
+    else:
+        # Update token if user exists
+        user.github_token = token
+        db.session.commit()
     
-    repos_resp = requests.get('https://api.github.com/user/repos', headers={'Authorization': f'token {token}'})
+    # Get user repositories
+    repos_resp = requests.get('https://api.github.com/user/repos', 
+                             headers={'Authorization': f'token {token}'})
     if repos_resp.status_code == 200:
         repos = repos_resp.json()
         for repo in repos:
@@ -119,10 +162,10 @@ def github_callback():
                 db.session.add(Repository(
                     repo_id=str(repo['id']), 
                     user_id=user.id,
-                    name=repo['name'], 
-                    full_name=repo['full_name'],
+                    name=repo.get('name', 'unknown'), 
+                    full_name=repo.get('full_name', 'unknown'),
                     description=repo.get('description', ''), 
-                    is_private=repo['private']
+                    is_private=repo.get('private', False)
                 ))
         db.session.commit()
     
@@ -305,12 +348,15 @@ def create_workspace():
     
     time.sleep(5)
     
+    host = os.getenv('BACKEND_HOST', 'localhost')
+    vscode_url = f"http://{host}:{port}"
+    
     workspace = Workspace(workspace_id=workspace_id, repo_id=repo.id, user_id=user.id, repo_name=repo.name,
-                         container_name=container_name, port=port, vscode_url=f"http://localhost:{port}", status='running')
+                         container_name=container_name, port=port, vscode_url=vscode_url, status='running')
     db.session.add(workspace)
     db.session.commit()
     
-    return jsonify({'workspace_id': workspace_id, 'vscode_url': f"http://localhost:{port}", 'reused': False, 'changes': changes})
+    return jsonify({'workspace_id': workspace_id, 'vscode_url': vscode_url, 'reused': False, 'changes': changes})
 
 @app.route('/api/workspace/sync/<workspace_id>', methods=['POST'])
 @login_required
@@ -378,19 +424,25 @@ def logout():
 
 @app.route('/')
 def index():
-    return send_from_directory('../frontend', 'index.html')
+    return send_from_directory(FRONTEND_PATH, 'index.html')
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
         return redirect('/')
-    return send_from_directory('../frontend', 'dashboard.html')
+    return send_from_directory(FRONTEND_PATH, 'dashboard.html')
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    
+    # Get configuration from environment variables
+    host = os.getenv('BACKEND_HOST', '0.0.0.0')
+    port = int(os.getenv('BACKEND_PORT', 5000))
+    debug = os.getenv('DEBUG', 'True').lower() == 'true'
+    
     print("\n" + "="*60)
-    print("🚀 CodeForge is running at http://localhost:5000")
+    print(f"🚀 CodeForge is running at http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
     print("="*60)
     print("\n✅ ALL FEATURES IMPLEMENTED:")
     print("   • Real-time file tracking with inotify")
@@ -399,4 +451,5 @@ if __name__ == '__main__':
     print("   • Pending changes badge with count")
     print("   • Commit button from dashboard")
     print("\n" + "="*60 + "\n")
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    
+    app.run(host=host, port=port, debug=debug, threaded=True)
