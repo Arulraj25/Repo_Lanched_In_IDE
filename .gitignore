@@ -1,41 +1,44 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
 env/
 venv/
 ENV/
-*.egg-info/
-dist/
-build/
+env.bak/
+venv.bak/
+
+# Flask
+instance/
+.webassets-cache
+.env.local
+.env.*.local
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
-data/*.db
-data/*.sqlite
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-.DS_Store
+*~
 
-# Logs
-*.log
+# CodeForge specific
+.codeforge_changes/
 logs/
+*.log
+data/
+uploads/
 
 # Docker
-.dockerignore
+*.pid
+*.lock
 
-# Environment
-.env.local
-.env.production
-
-# Instance
-instance/
-*.instance
+# OS
+.DS_Store
+Thumbs.db

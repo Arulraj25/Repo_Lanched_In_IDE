@@ -1,47 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeForge - Ephemeral Development Environments</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#0D1117;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-        .container{max-width:800px;margin:0 auto;padding:60px 20px;text-align:center}
-        h1{font-size:64px;background:linear-gradient(135deg,#58A6FF,#D2A8FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px}
-        .subtitle{font-size:20px;color:#8b949e;margin-bottom:40px}
-        .btn{background:#238636;color:#fff;padding:14px 32px;text-decoration:none;border-radius:8px;display:inline-block;font-size:16px;font-weight:500;transition:all 0.3s}
-        .btn:hover{background:#2ea043;transform:translateY(-2px)}
-        .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:60px;text-align:left}
-        .feature{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:20px}
-        .feature h3{color:#58A6FF;margin-bottom:10px}
-        .feature p{color:#8b949e;font-size:14px;line-height:1.6}
-        .emoji{font-size:32px;margin-bottom:10px}
-        footer{margin-top:60px;color:#8b949e;font-size:12px}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D1117;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 72px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        h1 {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #58A6FF, #D2A8FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+        
+        .subtitle {
+            font-size: 22px;
+            color: #8b949e;
+            margin-bottom: 40px;
+        }
+        
+        .btn-primary {
+            background: #238636;
+            color: #fff;
+            padding: 16px 48px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background: #2ea043;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(35, 134, 54, 0.3);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 60px;
+        }
+        
+        .feature {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 24px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            border-color: #58A6FF;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        .feature h3 {
+            color: #58A6FF;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        
+        .feature p {
+            color: #8b949e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            color: #8b949e;
+            font-size: 13px;
+            border-top: 1px solid #21262D;
+            padding-top: 30px;
+        }
+        
+        .footer a {
+            color: #58A6FF;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+            
+            .logo {
+                font-size: 48px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>⚡ CodeForge</h1>
-    <div class="subtitle">VS Code in your browser. Ephemeral. Fast. Free.</div>
-    <a href="/auth/github" class="btn">🚀 Sign in with GitHub</a>
-    
-    <div class="features">
-        <div class="feature">
-            <div class="emoji">🚀</div>
-            <h3>One-Click IDE</h3>
-            <p>Open any GitHub repository in VS Code instantly</p>
+    <div class="container">
+        <span class="logo">⚡</span>
+        <h1>CodeForge</h1>
+        <p class="subtitle">
+            VS Code in your browser. Ephemeral. Fast. Free.
+        </p>
+        
+        <a href="/auth/github" class="btn-primary">
+            🚀 Sign in with GitHub
+        </a>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">🚀</span>
+                <h3>One-Click IDE</h3>
+                <p>Open any GitHub repository in VS Code instantly with zero configuration</p>
+            </div>
+            
+            <div class="feature">
+                <span class="feature-icon">🗑️</span>
+                <h3>Ephemeral &amp; Secure</h3>
+                <p>Containers auto-destroy when you close the tab. No lingering resources</p>
+            </div>
+            
+            <div class="feature">
+                <span class="feature-icon">🔄</span>
+                <h3>Real-Time Sync</h3>
+                <p>Changes auto-detected and synced. Commit to GitHub with one click</p>
+            </div>
+            
+            <div class="feature">
+                <span class="feature-icon">🧹</span>
+                <h3>Auto Cleanup</h3>
+                <p>Idle containers automatically cleaned up after 30 minutes</p>
+            </div>
         </div>
-        <div class="feature">
-            <div class="emoji">🗑️</div>
-            <h3>Ephemeral</h3>
-            <p>Containers auto-destroy when you close the tab</p>
-        </div>
-        <div class="feature">
-            <div class="emoji">💨</div>
-            <h3>Auto Cleanup</h3>
-            <p>Idle containers destroyed after 5 minutes</p>
+        
+        <div class="footer">
+            <p>
+                Powered by Docker &amp; code-server | 
+                <a href="https://github.com" target="_blank">GitHub</a> integration
+            </p>
         </div>
     </div>
-    <footer>Powered by Docker & code-server</footer>
-</div>
 </body>
 </html>

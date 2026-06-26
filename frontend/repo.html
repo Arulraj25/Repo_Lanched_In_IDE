@@ -1,25 +1,560 @@
 <!DOCTYPE html>
-<html>
-<head><title>CodeForge - Repository</title><style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#0D1117;color:#fff;font-family:monospace;padding:20px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #30363D}.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;margin:5px}.btn-primary{background:#238636;color:#fff}.btn-danger{background:#DA3633;color:#fff}.btn-secondary{background:#21262D;color:#fff;border:1px solid #30363D}.workspace-card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:20px;margin-top:20px}.status-running{color:#3fb950}.status-stopped{color:#f85149}.toast{position:fixed;bottom:20px;right:20px;background:#238636;padding:12px 20px;border-radius:8px;z-index:1000}.loading{text-align:center;padding:40px}
-</style>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeForge - Repository Details</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D1117;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #30363D;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #238636;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #2ea043;
+        }
+        
+        .btn-danger {
+            background: #DA3633;
+            color: #fff;
+        }
+        
+        .btn-danger:hover {
+            background: #f85149;
+        }
+        
+        .btn-secondary {
+            background: #21262D;
+            color: #f0f6fc;
+            border: 1px solid #30363D;
+        }
+        
+        .btn-secondary:hover {
+            background: #30363D;
+        }
+        
+        .btn-commit {
+            background: #1f6feb;
+            color: #fff;
+        }
+        
+        .btn-commit:hover {
+            background: #388bfd;
+        }
+        
+        .btn-warning {
+            background: #d29922;
+            color: #fff;
+        }
+        
+        .btn-warning:hover {
+            background: #e3b341;
+        }
+        
+        .repo-header {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .repo-header h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .repo-header .full-name {
+            color: #8b949e;
+            font-size: 14px;
+        }
+        
+        .repo-header .description {
+            color: #f0f6fc;
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+        
+        .repo-header .stats {
+            display: flex;
+            gap: 20px;
+            color: #8b949e;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        
+        .repo-header .stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .card {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .card h3 {
+            margin-bottom: 12px;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card .status {
+            font-size: 13px;
+            font-weight: 400;
+        }
+        
+        .status-running {
+            color: #3fb950;
+        }
+        
+        .status-stopped {
+            color: #f85149;
+        }
+        
+        .status-unknown {
+            color: #8b949e;
+        }
+        
+        .workspace-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .changes-list {
+            background: #0D1117;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #21262D;
+        }
+        
+        .change-item {
+            font-family: monospace;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-bottom: 1px solid #21262D;
+        }
+        
+        .change-item:last-child {
+            border-bottom: none;
+        }
+        
+        .change-item.add {
+            color: #3fb950;
+        }
+        
+        .change-item.delete {
+            color: #f85149;
+            text-decoration: line-through;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #30363D;
+            border-top-color: #58A6FF;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: #238636;
+            color: #fff;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast-error {
+            background: #DA3633;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .repo-header h2 {
+                font-size: 20px;
+            }
+            
+            .workspace-actions {
+                flex-direction: column;
+            }
+            
+            .workspace-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="header"><h2>⚡ CodeForge</h2><button onclick="goBack()" class="btn btn-secondary">← Back to Dashboard</button></div>
-<div id="content">Loading...</div>
-<script>
-let repoData=null;let workspaceData=null;
-async function api(url,opts={}){let r=await fetch('/api'+url,{...opts,credentials:'same-origin',headers:{'Content-Type':'application/json'}});if(!r.ok)throw new Error((await r.json()).error);return r.json()}
-function showToast(msg,isError=false){let t=document.createElement('div');t.className='toast';t.textContent=msg;if(isError)t.style.background='#DA3633';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
-async function load(){let repoId=window.location.pathname.split('/').pop();try{repoData=await api(`/repo/${repoId}`);workspaceData=repoData.workspace;render();}catch(error){document.getElementById('content').innerHTML=`<div class="loading">Error: ${error.message}</div>`;}}
-function render(){let workspaceHtml='';if(workspaceData&&workspaceData.exists){workspaceHtml=`<div class="workspace-card"><h3>🚀 VS Code Workspace <span class="status-running">● ${workspaceData.status}</span></h3><button class="btn btn-primary" onclick="openIDE()">Open VS Code</button><button class="btn btn-secondary" onclick="stopWorkspace()">Stop</button><button class="btn btn-danger" onclick="deleteWorkspace()">Delete</button></div>`;}else{workspaceHtml=`<div class="workspace-card"><h3>🚀 VS Code Workspace</h3><p>No active workspace</p><button class="btn btn-primary" onclick="createWorkspace()">Create Workspace</button></div>`;}
-document.getElementById('content').innerHTML=`<div><h2>📦 ${repoData.full_name}</h2><p>${repoData.description||'No description'}</p><a href="${repoData.html_url}" target="_blank" style="color:#58A6FF">View on GitHub →</a>${workspaceHtml}</div>`;}
-async function createWorkspace(){showToast('Creating workspace...');try{let result=await api('/workspace/create',{method:'POST',body:JSON.stringify({repo_id:repoData.id})});workspaceData={exists:true,status:'running',vscode_url:result.vscode_url,workspace_id:result.workspace_id};render();showToast('Workspace created!');setTimeout(()=>openIDE(),2000);}catch(error){showToast('Error: '+error.message,true);}}
-function openIDE(){if(workspaceData&&workspaceData.vscode_url){window.open(workspaceData.vscode_url,'_blank');}}
-async function stopWorkspace(){if(!workspaceData||!workspaceData.workspace_id)return;showToast('Stopping...');try{await api(`/workspace/stop/${workspaceData.workspace_id}`,{method:'POST'});workspaceData.status='stopped';render();showToast('Workspace stopped');}catch(error){showToast('Error: '+error.message,true);}}
-async function deleteWorkspace(){if(!confirm('Delete workspace? All unsaved changes will be lost.'))return;if(!workspaceData||!workspaceData.workspace_id)return;showToast('Deleting...');try{await api(`/workspace/delete/${workspaceData.workspace_id}`,{method:'DELETE'});workspaceData=null;render();showToast('Workspace deleted');}catch(error){showToast('Error: '+error.message,true);}}
-function goBack(){window.location.href='/dashboard';}
-load();
-</script>
+    <div class="header">
+        <h2>📂 Repository Details</h2>
+        <button onclick="goBack()" class="btn btn-secondary">← Back to Dashboard</button>
+    </div>
+    
+    <div id="content">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 12px;">Loading repository details...</p>
+        </div>
+    </div>
+    
+    <script>
+        let repoData = null;
+        let workspaceData = null;
+        let changesData = null;
+        let repoId = null;
+        
+        // ============================================
+        // API Helper
+        // ============================================
+        
+        async function api(url, opts = {}) {
+            try {
+                const response = await fetch('/api' + url, {
+                    ...opts,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(opts.headers || {})
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || 'Request failed');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+        
+        // ============================================
+        // Toast System
+        // ============================================
+        
+        function showToast(message, isError = false) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast${isError ? ' toast-error' : ''}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // ============================================
+        // Load Repository Data
+        // ============================================
+        
+        async function loadData() {
+            const pathSegments = window.location.pathname.split('/');
+            repoId = pathSegments[pathSegments.length - 1];
+            
+            if (!repoId || isNaN(repoId)) {
+                document.getElementById('content').innerHTML = `
+                    <div class="card">
+                        <p style="color:#f85149;">Invalid repository ID</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const data = await api(`/repo/${repoId}/details`);
+                repoData = data.repository;
+                workspaceData = data.workspace;
+                changesData = data.changes;
+                
+                render();
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="card">
+                        <p style="color:#f85149;">Error loading repository: ${error.message}</p>
+                        <br>
+                        <button onclick="loadData()" class="btn btn-secondary">Retry</button>
+                    </div>
+                `;
+            }
+        }
+        
+        // ============================================
+        // Render Functions
+        // ============================================
+        
+        function render() {
+            if (!repoData) return;
+            
+            const hasWorkspace = workspaceData && workspaceData.status === 'running';
+            const statusClass = hasWorkspace ? 'status-running' : 'status-stopped';
+            const statusText = hasWorkspace ? 'Running' : 'Stopped';
+            
+            let changesHtml = '';
+            if (changesData && changesData.total > 0) {
+                for (const file of changesData.file_list || []) {
+                    changesHtml += `<div class="change-item add">+ ${file}</div>`;
+                }
+                for (const file of changesData.deleted_list || []) {
+                    changesHtml += `<div class="change-item delete">- ${file}</div>`;
+                }
+            } else {
+                changesHtml = '<div style="color:#8b949e;padding:8px;">No pending changes</div>';
+            }
+            
+            let html = `
+                <!-- Repository Header -->
+                <div class="repo-header">
+                    <h2>
+                        📦 ${repoData.name}
+                        ${repoData.is_private ? '🔒' : ''}
+                    </h2>
+                    <div class="full-name">${repoData.full_name}</div>
+                    <div class="description">${repoData.description || 'No description'}</div>
+                    <div class="stats">
+                        <span>🌿 ${repoData.default_branch || 'main'}</span>
+                        <span>📅 Updated: ${repoData.last_synced ? new Date(repoData.last_synced).toLocaleDateString() : 'Never'}</span>
+                        <span>
+                            <a href="https://github.com/${repoData.full_name}" target="_blank" style="color:#58A6FF;text-decoration:none;">
+                                View on GitHub →
+                            </a>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Workspace Status -->
+                <div class="card">
+                    <h3>
+                        🚀 Workspace 
+                        <span class="status ${statusClass}">● ${statusText}</span>
+                    </h3>
+                    ${hasWorkspace ? `
+                        <p style="color:#8b949e;font-size:13px;">
+                            Workspace ID: ${workspaceData.workspace_id}<br>
+                            Port: ${workspaceData.port}<br>
+                            Last heartbeat: ${workspaceData.last_heartbeat ? new Date(workspaceData.last_heartbeat).toLocaleString() : 'Never'}
+                        </p>
+                    ` : `
+                        <p style="color:#8b949e;">No active workspace</p>
+                    `}
+                    <div class="workspace-actions">
+                        ${hasWorkspace ? `
+                            <button onclick="openIDE()" class="btn btn-primary">🚀 Open IDE</button>
+                            <button onclick="destroyWorkspace()" class="btn btn-danger">🗑️ Destroy</button>
+                        ` : `
+                            <button onclick="createWorkspace()" class="btn btn-primary">🚀 Create Workspace</button>
+                        `}
+                        <button onclick="refreshStatus()" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <!-- Pending Changes -->
+                <div class="card">
+                    <h3>
+                        📝 Pending Changes 
+                        <span style="font-size:14px;color:#8b949e;font-weight:400;">
+                            (${changesData ? changesData.total : 0})
+                        </span>
+                    </h3>
+                    <div class="changes-list">${changesHtml}</div>
+                    ${changesData && changesData.total > 0 ? `
+                        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                            <button onclick="openCommitModal()" class="btn btn-commit">📤 Commit to GitHub</button>
+                            <button onclick="clearChanges()" class="btn btn-warning">🗑️ Clear Changes</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+        }
+        
+        // ============================================
+        // Workspace Actions
+        // ============================================
+        
+        async function createWorkspace() {
+            showToast('🚀 Creating workspace...');
+            try {
+                const result = await api('/workspace/create', {
+                    method: 'POST',
+                    body: JSON.stringify({ repo_id: parseInt(repoId) })
+                });
+                
+                workspaceData = {
+                    workspace_id: result.workspace_id,
+                    status: 'running',
+                    port: result.port || 'N/A',
+                    last_heartbeat: new Date().toISOString()
+                };
+                
+                showToast('✅ Workspace created successfully!');
+                render();
+                
+                // Open IDE after short delay
+                setTimeout(() => openIDE(), 1500);
+                
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, true);
+            }
+        }
+        
+        function openIDE() {
+            if (workspaceData && workspaceData.workspace_id) {
+                // Get VSCode URL from workspace
+                window.open(`http://${window.location.hostname}:${workspaceData.port || 30000}`, '_blank');
+            } else {
+                showToast('No active workspace', true);
+            }
+        }
+        
+        async function destroyWorkspace() {
+            if (!confirm('⚠️ Destroy workspace? All unsaved changes will be lost unless committed.')) return;
+            if (!workspaceData || !workspaceData.workspace_id) return;
+            
+            showToast('🗑️ Destroying workspace...');
+            try {
+                await api(`/workspace/destroy/${workspaceData.workspace_id}`, { method: 'POST' });
+                workspaceData = null;
+                showToast('✅ Workspace destroyed');
+                render();
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, true);
+            }
+        }
+        
+        async function refreshStatus() {
+            showToast('🔄 Refreshing...');
+            await loadData();
+            showToast('✅ Refreshed');
+        }
+        
+        // ============================================
+        // Changes Actions
+        // ============================================
+        
+        function openCommitModal() {
+            if (repoData) {
+                window.location.href = `/dashboard?commit=${repoId}`;
+            }
+        }
+        
+        async function clearChanges() {
+            if (!confirm('⚠️ Clear all pending changes? This cannot be undone.')) return;
+            
+            showToast('🗑️ Clearing changes...');
+            try {
+                await api(`/repo/changes/${repoId}/clear`, { method: 'POST' });
+                changesData = { total: 0, file_list: [], deleted_list: [] };
+                showToast('✅ Changes cleared');
+                render();
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, true);
+            }
+        }
+        
+        // ============================================
+        // Navigation
+        // ============================================
+        
+        function goBack() {
+            window.location.href = '/dashboard';
+        }
+        
+        // ============================================
+        // Auto-refresh
+        // ============================================
+        
+        // Refresh every 30 seconds
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadData();
+            }
+        }, 30000);
+        
+        // ============================================
+        // Initialize
+        // ============================================
+        
+        loadData();
+    </script>
 </body>
 </html>

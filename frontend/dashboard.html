@@ -1,204 +1,911 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CodeForge - GitHub Integrated IDE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>CodeForge - Dashboard</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#0D1117;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #30363D}
-        .repo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px;margin-top:20px}
-        .repo-card{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:20px;cursor:pointer;transition:all 0.3s}
-        .repo-card:hover{transform:translateY(-2px);border-color:#58A6FF;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
-        .repo-name{font-size:18px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
-        .repo-description{color:#8b949e;font-size:14px;margin-bottom:16px;line-height:1.5}
-        .repo-footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid #21262D}
-        .status-badge{font-size:12px;padding:4px 8px;border-radius:20px;background:#21262D;color:#8b949e}
-        .status-active{background:#2ea04333;color:#3fb950}
-        .pending-badge{background:#f0883e33;color:#f0883e;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:bold}
-        .pending-badge:hover{background:#f0883e55;transform:scale(1.02)}
-        .btn{background:#238636;color:#fff;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px}
-        .btn-logout{background:#DA3633}
-        .btn-commit{background:#1f6feb}
-        .avatar{width:40px;height:40px;border-radius:50%}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:2000;justify-content:center;align-items:center}
-        .modal-content{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:30px;max-width:550px;width:90%}
-        .modal-content h3{margin-bottom:15px;color:#58A6FF}
-        .modal input,.modal textarea{width:100%;padding:12px;margin:10px 0;background:#0D1117;border:1px solid #30363D;color:#fff;border-radius:6px}
-        .modal-buttons{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
-        .toast{position:fixed;bottom:20px;right:20px;background:#238636;padding:12px 20px;border-radius:8px;z-index:1000;animation:slideIn 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
-        .toast-error{background:#DA3633}
-        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-        .loading{text-align:center;padding:40px;color:#8b949e}
-        .changes-list{background:#0D1117;border-radius:8px;padding:10px;margin:10px 0;max-height:200px;overflow-y:auto}
-        .change-file{font-family:monospace;font-size:11px;padding:4px;border-bottom:1px solid #21262D}
-        .change-file-add{color:#3fb950}
-        .change-file-del{color:#f85149;text-decoration:line-through}
-        .change-count{font-size:24px;font-weight:bold;color:#58A6FF}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D1117;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #30363D;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-left h2 {
+            font-size: 24px;
+        }
+        
+        .header-left .subtitle {
+            color: #8b949e;
+            font-size: 13px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #30363D;
+        }
+        
+        .username {
+            color: #f0f6fc;
+            font-weight: 500;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #238636;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #2ea043;
+        }
+        
+        .btn-danger {
+            background: #DA3633;
+            color: #fff;
+        }
+        
+        .btn-danger:hover {
+            background: #f85149;
+        }
+        
+        .btn-secondary {
+            background: #21262D;
+            color: #f0f6fc;
+            border: 1px solid #30363D;
+        }
+        
+        .btn-secondary:hover {
+            background: #30363D;
+        }
+        
+        .btn-commit {
+            background: #1f6feb;
+            color: #fff;
+        }
+        
+        .btn-commit:hover {
+            background: #388bfd;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .section-subtitle {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .repo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            margin-top: 16px;
+        }
+        
+        .repo-card {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .repo-card:hover {
+            border-color: #58A6FF;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .repo-name {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .repo-name span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .repo-description {
+            color: #8b949e;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            min-height: 40px;
+        }
+        
+        .repo-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid #21262D;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #21262D;
+            color: #8b949e;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-active {
+            background: rgba(46, 160, 67, 0.2);
+            color: #3fb950;
+        }
+        
+        .status-active::before {
+            content: "●";
+            color: #3fb950;
+        }
+        
+        .pending-badge {
+            background: rgba(240, 136, 62, 0.2);
+            color: #f0883e;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            border: 1px solid rgba(240, 136, 62, 0.3);
+        }
+        
+        .pending-badge:hover {
+            background: rgba(240, 136, 62, 0.35);
+            transform: scale(1.02);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #30363D;
+            border-top-color: #58A6FF;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h3 {
+            color: #58A6FF;
+            margin-bottom: 16px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-content .close-btn {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 24px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        
+        .modal-content .close-btn:hover {
+            color: #f0f6fc;
+        }
+        
+        .changes-list {
+            background: #0D1117;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #21262D;
+        }
+        
+        .change-file {
+            font-family: monospace;
+            font-size: 12px;
+            padding: 6px 8px;
+            border-bottom: 1px solid #21262D;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .change-file:last-child {
+            border-bottom: none;
+        }
+        
+        .change-file-add {
+            color: #3fb950;
+        }
+        
+        .change-file-add::before {
+            content: "+ ";
+        }
+        
+        .change-file-del {
+            color: #f85149;
+            text-decoration: line-through;
+        }
+        
+        .change-file-del::before {
+            content: "− ";
+        }
+        
+        .change-count-badge {
+            font-size: 28px;
+            font-weight: 700;
+            color: #58A6FF;
+        }
+        
+        .modal input,
+        .modal textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #0D1117;
+            border: 1px solid #30363D;
+            color: #f0f6fc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .modal input:focus,
+        .modal textarea:focus {
+            outline: none;
+            border-color: #58A6FF;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .toast {
+            background: #238636;
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toast-error {
+            background: #DA3633;
+        }
+        
+        .toast-warning {
+            background: #d29922;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+        
+        .empty-state .icon {
+            font-size: 64px;
+            display: block;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state h3 {
+            color: #f0f6fc;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .repo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="header">
-    <div><h2>⚡ CodeForge</h2><p style="color:#8b949e;font-size:12px">Real-time File Tracking | GitHub Integration</p></div>
-    <div style="display:flex;align-items:center;gap:12px">
-        <img id="avatar" class="avatar" src=""><span id="username"></span>
-        <button onclick="logout()" class="btn btn-logout">Logout</button>
-    </div>
-</div>
-<h3>📁 Your Repositories</h3>
-<p style="color:#8b949e;margin-bottom:20px;font-size:14px">✨ <strong>REAL-TIME FEATURES:</strong> Click any repo → Create files/folders → Changes auto-tracked → Close IDE → Push to GitHub or save locally</p>
-<div id="repos" class="loading">Loading repositories...</div>
-
-<div id="commitModal" class="modal">
-    <div class="modal-content">
-        <h3>📤 Commit to GitHub</h3>
-        <div id="commitChangesList" style="background:#0D1117;border-radius:8px;padding:10px;margin:10px 0;max-height:200px;overflow-y:auto"></div>
-        <input type="text" id="commitMessage" placeholder="Commit message">
-        <div class="modal-buttons">
-            <button onclick="confirmCommit()" class="btn btn-commit">✅ Commit & Push to GitHub</button>
-            <button onclick="closeModal()" class="btn">Cancel</button>
+    <div class="header">
+        <div class="header-left">
+            <h2>⚡ CodeForge</h2>
+            <span class="subtitle">Real-time IDE Workspaces</span>
+        </div>
+        <div class="header-right">
+            <img id="avatar" class="avatar" src="" alt="Avatar">
+            <span id="username" class="username"></span>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
         </div>
     </div>
-</div>
-
-<script>
-let currentRepoId = null;
-let currentRepoChanges = null;
-
-async function api(url, opts = {}) {
-    try {
-        let r = await fetch('/api' + url, {...opts, credentials: 'same-origin', headers: {'Content-Type': 'application/json'}});
-        if (!r.ok) throw new Error((await r.json()).error);
-        return r.json();
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
-    }
-}
-
-function showToast(msg, isError = false) {
-    let t = document.createElement('div');
-    t.className = 'toast' + (isError ? ' toast-error' : '');
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-}
-
-async function openCommitModal(repoId, repoName) {
-    currentRepoId = repoId;
-    try {
-        currentRepoChanges = await api(`/repo/changes/${repoId}`);
-        let files = currentRepoChanges.files || {};
-        let deleted = currentRepoChanges.deleted_files || [];
-        let fileCount = Object.keys(files).length;
+    
+    <h3 class="section-title">📁 Your Repositories</h3>
+    <p class="section-subtitle">
+        Click any repository to launch an ephemeral VS Code workspace with real-time file tracking
+    </p>
+    
+    <div id="repos" class="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 16px;">Loading repositories...</p>
+    </div>
+    
+    <!-- Commit Modal -->
+    <div id="commitModal" class="modal">
+        <div class="modal-content">
+            <h3>
+                📤 Commit to GitHub
+                <button onclick="closeModal()" class="close-btn">&times;</button>
+            </h3>
+            <div id="commitSummary" style="margin-bottom: 8px;"></div>
+            <div id="commitChangesList" class="changes-list"></div>
+            <input type="text" id="commitMessage" placeholder="Enter commit message...">
+            <div class="modal-buttons">
+                <button onclick="confirmCommit()" class="btn btn-commit">✅ Commit &amp; Push</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <script>
+        // ============================================
+        // CSRF Token Helper
+        // ============================================
         
-        let changesHtml = `<div style="margin-bottom:10px"><span class="change-count">${fileCount + deleted.length}</span> change(s) to commit:</div>`;
-        
-        for (let [path, content] of Object.entries(files)) {
-            let preview = content.substring(0, 50) + (content.length > 50 ? '...' : '');
-            changesHtml += `<div class="change-file change-file-add">📄 + ${path}<br><span style="font-size:10px;color:#8b949e;margin-left:20px">${preview}</span></div>`;
-        }
-        for (let path of deleted) {
-            changesHtml += `<div class="change-file change-file-del">🗑️ - ${path}</div>`;
-        }
-        
-        document.getElementById('commitChangesList').innerHTML = changesHtml;
-        document.getElementById('commitMessage').value = `Update ${repoName}: ${fileCount + deleted.length} file(s) changed`;
-        document.getElementById('commitModal').style.display = 'flex';
-    } catch(e) { showToast('Error loading changes: ' + e.message, true); }
-}
-
-async function confirmCommit() {
-    const message = document.getElementById('commitMessage').value;
-    if (!message) { showToast('Please enter a commit message', true); return; }
-    closeModal();
-    showToast('📤 Committing to GitHub...');
-    try {
-        await api(`/repo/commit/${currentRepoId}`, {method: 'POST', body: JSON.stringify({commit_message: message})});
-        showToast('✅ Successfully pushed to GitHub!');
-        load();
-    } catch (error) { showToast('❌ Commit failed: ' + error.message, true); }
-}
-
-function closeModal() { document.getElementById('commitModal').style.display = 'none'; currentRepoId = null; }
-
-async function load() {
-    try {
-        let user = await api('/user/profile');
-        document.getElementById('username').innerText = '@' + user.username;
-        document.getElementById('avatar').src = user.avatar_url || 'https://github.com/identicons/default.png';
-        
-        let repos = await api('/repositories');
-        let repoHtml = '<div class="repo-grid">';
-        for (let repo of repos) {
-            let status = await api(`/workspace/check/${repo.id}`);
-            let changes = await api(`/repo/changes/${repo.id}`);
-            let fileCount = Object.keys(changes.files || {}).length;
-            let deletedCount = (changes.deleted_files || []).length;
-            let totalChanges = fileCount + deletedCount;
+        function getCsrfToken() {
+            // Try meta tag first
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) return meta.content;
             
-            let statusHtml = status.exists && status.status === 'running' ? '<span class="status-badge status-active">● Active</span>' : '<span class="status-badge">○ Inactive</span>';
-            let pendingHtml = totalChanges > 0 ? `<span class="pending-badge" onclick="event.stopPropagation();openCommitModal(${repo.id}, '${repo.name}')">📝 ${totalChanges} Pending Change(s) - Click to Commit</span>` : '';
+            // Try cookie
+            const cookie = document.cookie.split('; ').find(row => row.startsWith('csrf_token='));
+            if (cookie) return cookie.split('=')[1];
             
-            repoHtml += `<div class="repo-card" onclick="openIDE(${repo.id})">
-                <div class="repo-name"><span>📦 ${repo.name} ${repo.is_private ? '🔒' : ''}</span>${pendingHtml}</div>
-                <div class="repo-description">${repo.description || 'No description'}</div>
-                <div class="repo-footer">${statusHtml}<span style="font-size:12px;color:#58A6FF">Click to open IDE →</span></div>
-            </div>`;
+            return '';
         }
-        repoHtml += '</div>';
-        document.getElementById('repos').innerHTML = repoHtml;
-    } catch (error) { document.getElementById('repos').innerHTML = `<div class="loading">Error: ${error.message}</div>`; }
-}
-
-async function openIDE(repoId) {
-    showToast('🚀 Launching IDE with REAL-TIME file tracking...');
-    try {
-        let result = await api('/workspace/create', {method: 'POST', body: JSON.stringify({repo_id: repoId})});
         
-        let ideWindow = window.open(result.vscode_url, '_blank');
-        let workspaceId = result.workspace_id;
+        // ============================================
+        // API Helper with CSRF
+        // ============================================
         
-        showToast(result.reused ? '✅ Reconnecting to existing workspace...' : '✅ Workspace ready! File watcher active.');
-        
-        // Monitor window close for before-close alert
-        let checkInterval = setInterval(async () => {
-            if (ideWindow.closed) {
-                clearInterval(checkInterval);
-                // Get latest changes before closing
-                let finalChanges = await api(`/repo/changes/${repoId}`);
-                let hasChanges = Object.keys(finalChanges.files || {}).length > 0 || (finalChanges.deleted_files || []).length > 0;
+        async function api(url, opts = {}) {
+            try {
+                const csrfToken = getCsrfToken();
                 
-                if (hasChanges) {
-                    const action = confirm('📝 You have unsaved changes!\n\n• Click OK to push to GitHub now\n• Click Cancel to save locally for later\n\nYour changes are already saved in the database.');
-                    
-                    if (action) {
-                        let commitMsg = prompt('Enter commit message:', 'CodeForge: Update files');
-                        if (commitMsg) {
-                            showToast('📤 Committing to GitHub...');
-                            try {
-                                await api(`/repo/commit/${repoId}`, {method: 'POST', body: JSON.stringify({commit_message: commitMsg})});
-                                showToast('✅ Changes pushed to GitHub successfully!');
-                            } catch (e) { showToast('⚠️ Push failed. Changes saved locally: ' + e.message, true); }
-                        } else {
-                            showToast('💾 Changes saved locally. Commit later from dashboard.');
-                        }
-                    } else {
-                        showToast('💾 Changes saved locally. Click "Pending Changes" badge to commit later.');
+                const response = await fetch('/api' + url, {
+                    ...opts,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken,
+                        ...(opts.headers || {})
                     }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || 'Request failed');
                 }
                 
-                await api(`/workspace/destroy/${workspaceId}`, {method: 'POST'});
-                showToast('✓ Workspace closed');
-                load();
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
             }
-        }, 1000);
+        }
         
-    } catch (error) { showToast('❌ Error: ' + error.message, true); }
-}
-
-async function logout() { await api('/auth/logout', {method: 'POST'}); window.location.href = '/'; }
-
-load();
-</script>
+        // ============================================
+        // Toast System
+        // ============================================
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        // ============================================
+        // Modal Functions
+        // ============================================
+        
+        function closeModal() {
+            document.getElementById('commitModal').classList.remove('active');
+            currentRepoId = null;
+            currentRepoChanges = null;
+        }
+        
+        async function openCommitModal(repoId, repoName) {
+            currentRepoId = repoId;
+            
+            try {
+                showToast('Loading changes...', 'info');
+                currentRepoChanges = await api(`/repo/changes/${repoId}`);
+                
+                const files = currentRepoChanges.files || {};
+                const deleted = currentRepoChanges.deleted_files || [];
+                const total = Object.keys(files).length + deleted.length;
+                
+                // Build changes list
+                let changesHtml = '';
+                let fileCount = 0;
+                
+                for (const [path, content] of Object.entries(files)) {
+                    if (fileCount < 20) {
+                        const preview = content ? content.substring(0, 60) + (content.length > 60 ? '...' : '') : '';
+                        changesHtml += `<div class="change-file change-file-add">${path}</div>`;
+                    }
+                    fileCount++;
+                }
+                
+                for (const path of deleted) {
+                    changesHtml += `<div class="change-file change-file-del">${path}</div>`;
+                }
+                
+                if (fileCount > 20) {
+                    changesHtml += `<div class="change-file" style="color:#8b949e;">... and ${fileCount - 20} more files</div>`;
+                }
+                
+                if (!changesHtml) {
+                    changesHtml = '<div style="color:#8b949e;padding:8px;">No changes to display</div>';
+                }
+                
+                document.getElementById('commitSummary').innerHTML = `
+                    <span class="change-count-badge">${total}</span> change(s) to commit
+                `;
+                document.getElementById('commitChangesList').innerHTML = changesHtml;
+                document.getElementById('commitMessage').value = 
+                    `Update ${repoName}: ${total} file(s) changed`;
+                
+                document.getElementById('commitModal').classList.add('active');
+                
+            } catch (error) {
+                showToast('Error loading changes: ' + error.message, 'error');
+            }
+        }
+        
+        async function confirmCommit() {
+            const message = document.getElementById('commitMessage').value.trim();
+            if (!message) {
+                showToast('Please enter a commit message', 'warning');
+                return;
+            }
+            
+            if (message.length < 3) {
+                showToast('Commit message must be at least 3 characters', 'warning');
+                return;
+            }
+            
+            closeModal();
+            showToast('📤 Committing to GitHub...', 'info');
+            
+            try {
+                const result = await api(`/repo/commit/${currentRepoId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ commit_message: message })
+                });
+                
+                showToast('✅ Successfully pushed to GitHub!', 'success');
+                await loadRepositories();
+                
+            } catch (error) {
+                showToast('❌ Commit failed: ' + error.message, 'error');
+            }
+        }
+        
+        // ============================================
+        // Repository Loading
+        // ============================================
+        
+        async function loadRepositories() {
+            const container = document.getElementById('repos');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:16px;">Loading repositories...</p></div>';
+            
+            try {
+                const repos = await api('/repositories');
+                
+                if (!repos || repos.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="icon">📭</span>
+                            <h3>No repositories found</h3>
+                            <p>Create a repository on GitHub or refresh to see your repos.</p>
+                            <br>
+                            <a href="https://github.com/new" target="_blank" class="btn btn-primary">Create on GitHub</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="repo-grid">';
+                
+                for (const repo of repos) {
+                    const status = await api(`/workspace/status/${repo.id}`);
+                    const changes = await api(`/repo/changes/${repo.id}`);
+                    const totalChanges = changes.change_count || 0;
+                    
+                    const isRunning = status.exists && status.status === 'running';
+                    const statusHtml = isRunning 
+                        ? '<span class="status-badge status-active">Active</span>'
+                        : '<span class="status-badge">Inactive</span>';
+                    
+                    const pendingHtml = totalChanges > 0 
+                        ? `<span class="pending-badge" onclick="event.stopPropagation();openCommitModal(${repo.id}, '${repo.name}')">
+                            📝 ${totalChanges} Pending
+                        </span>`
+                        : '';
+                    
+                    html += `
+                        <div class="repo-card" onclick="openIDE(${repo.id})">
+                            <div class="repo-name">
+                                <span>
+                                    📦 ${repo.name}
+                                    ${repo.is_private ? '🔒' : ''}
+                                </span>
+                                ${pendingHtml}
+                            </div>
+                            <div class="repo-description">${repo.description || 'No description'}</div>
+                            <div class="repo-footer">
+                                ${statusHtml}
+                                <span style="font-size:12px;color:#58A6FF;">Click to open →</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="icon">⚠️</span>
+                        <h3>Error loading repositories</h3>
+                        <p>${error.message}</p>
+                        <br>
+                        <button onclick="loadRepositories()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+                showToast('Error loading repositories: ' + error.message, 'error');
+            }
+        }
+        
+        // ============================================
+        // IDE Management with CSRF
+        // ============================================
+        
+        let ideWindow = null;
+        let windowCheckInterval = null;
+        
+        async function openIDE(repoId) {
+            showToast('🚀 Launching IDE with real-time file tracking...', 'info');
+            
+            try {
+                // This will automatically include the CSRF token via the api() function
+                const result = await api('/workspace/create', {
+                    method: 'POST',
+                    body: JSON.stringify({ repo_id: repoId })
+                });
+                
+                const vscodeUrl = result.vscode_url;
+                const workspaceId = result.workspace_id;
+                
+                // Open IDE in new window
+                ideWindow = window.open(vscodeUrl, '_blank');
+                
+                if (!ideWindow) {
+                    showToast('⚠️ Popup blocked! Please allow popups for this site.', 'warning');
+                    return;
+                }
+                
+                showToast(
+                    result.reused ? '✅ Reconnecting to existing workspace...' : '✅ Workspace ready!',
+                    'success'
+                );
+                
+                // Monitor window closure
+                if (windowCheckInterval) {
+                    clearInterval(windowCheckInterval);
+                }
+                
+                windowCheckInterval = setInterval(async () => {
+                    try {
+                        if (ideWindow && ideWindow.closed) {
+                            clearInterval(windowCheckInterval);
+                            windowCheckInterval = null;
+                            
+                            // Check for pending changes
+                            const finalChanges = await api(`/repo/changes/${repoId}`);
+                            const hasChanges = finalChanges.change_count > 0;
+                            
+                            if (hasChanges) {
+                                const action = confirm(
+                                    '📝 You have unsaved changes!\n\n' +
+                                    '• Click OK to push to GitHub now\n' +
+                                    '• Click Cancel to save locally for later\n\n' +
+                                    'Your changes are already saved in the database.'
+                                );
+                                
+                                if (action) {
+                                    const commitMsg = prompt(
+                                        'Enter commit message:',
+                                        `CodeForge: Update ${Object.keys(finalChanges.files || {}).length} file(s)`
+                                    );
+                                    
+                                    if (commitMsg && commitMsg.trim()) {
+                                        showToast('📤 Committing to GitHub...', 'info');
+                                        try {
+                                            await api(`/repo/commit/${repoId}`, {
+                                                method: 'POST',
+                                                body: JSON.stringify({ 
+                                                    commit_message: commitMsg.trim() 
+                                                })
+                                            });
+                                            showToast('✅ Changes pushed to GitHub successfully!', 'success');
+                                        } catch (e) {
+                                            showToast('⚠️ Push failed. Changes saved locally: ' + e.message, 'warning');
+                                        }
+                                    } else {
+                                        showToast('💾 Changes saved locally. Commit later from dashboard.', 'info');
+                                    }
+                                } else {
+                                    showToast('💾 Changes saved locally. Click "Pending" badge to commit later.', 'info');
+                                }
+                            }
+                            
+                            // Destroy workspace
+                            try {
+                                await api(`/workspace/destroy/${workspaceId}`, { method: 'POST' });
+                                showToast('✓ Workspace cleaned up', 'success');
+                            } catch (e) {
+                                console.warn('Workspace cleanup warning:', e);
+                            }
+                            
+                            // Refresh repository list
+                            await loadRepositories();
+                        }
+                    } catch (error) {
+                        console.error('Window monitoring error:', error);
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                showToast('❌ Error launching IDE: ' + error.message, 'error');
+            }
+        }
+        
+        // ============================================
+        // User Profile
+        // ============================================
+        
+        async function loadUserProfile() {
+            try {
+                const user = await api('/user/profile');
+                document.getElementById('username').textContent = '@' + user.username;
+                document.getElementById('avatar').src = user.avatar_url || 'https://github.com/identicons/default.png';
+            } catch (error) {
+                console.error('Failed to load user profile:', error);
+            }
+        }
+        
+        // ============================================
+        // Logout
+        // ============================================
+        
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            
+            try {
+                showToast('Logging out...', 'info');
+                await api('/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                showToast('Logout error: ' + error.message, 'error');
+            }
+        }
+        
+        // ============================================
+        // Keyboard Shortcuts
+        // ============================================
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // ============================================
+        // Initialize
+        // ============================================
+        
+        let currentRepoId = null;
+        let currentRepoChanges = null;
+        
+        async function init() {
+            await loadUserProfile();
+            await loadRepositories();
+            
+            // Refresh repositories periodically
+            setInterval(loadRepositories, 60000); // Every minute
+        }
+        
+        // Start the application
+        init();
+    </script>
 </body>
 </html>

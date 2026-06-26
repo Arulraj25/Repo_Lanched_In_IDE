@@ -1,81 +1,175 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CodeForge - IDE</title>
+    <meta charset="UTF-8">
+    <title>CodeForge IDE</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#0D1117;color:#fff;font-family:system-ui;height:100vh;overflow:hidden}
-        .navbar{background:#161B22;border-bottom:1px solid #30363D;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
-        .btn{background:#238636;color:#fff;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:12px}
-        .btn-danger{background:#DA3633}
-        iframe{width:100%;height:calc(100vh - 50px);border:none}
-        .info{color:#8b949e;font-size:12px}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0D1117; color: #fff; font-family: system-ui; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .navbar { background: #161B22; border-bottom: 1px solid #30363D; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .navbar-left { display: flex; align-items: center; gap: 14px; }
+        .navbar-left strong { color: #f0f6fc; }
+        .navbar-left .info { color: #8b949e; font-size: 12px; }
+        .btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
+        .btn-danger { background: #DA3633; color: #fff; }
+        #ide-frame { flex: 1; width: 100%; border: none; background: #0D1117; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0D1117; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .loading-overlay.hidden { display: none; }
+        .spinner { width: 50px; height: 50px; border: 3px solid #30363D; border-top-color: #58A6FF; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #8b949e; margin-top: 16px; }
+        .container-wrapper { position: relative; flex: 1; }
     </style>
 </head>
 <body>
-<div class="navbar">
-    <div>
-        <strong>⚡ CodeForge IDE</strong>
-        <span class="info" id="info">Loading...</span>
+    <div class="navbar">
+        <div class="navbar-left">
+            <strong>⚡ CodeForge IDE</strong>
+            <span class="info" id="workspaceInfo">Connecting...</span>
+        </div>
+        <div>
+            <button onclick="closeAndDestroy()" class="btn btn-danger">✕ Close & Destroy</button>
+        </div>
     </div>
-    <button onclick="closeAndDestroy()" class="btn btn-danger">Close & Destroy Container</button>
-</div>
-<iframe id="ide-frame" src="about:blank"></iframe>
+    
+    <div class="container-wrapper">
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading IDE workspace...</div>
+        </div>
+        <iframe id="ide-frame" src="about:blank"></iframe>
+    </div>
 
-<script>
-let workspaceId=null;
-let heartbeatInterval=null;
+    <script>
+        let workspaceId = null;
+        let heartbeatInterval = null;
+        let destroyed = false;
 
-async function api(url,opts={}){
-    let r=await fetch('/api'+url,{...opts,credentials:'same-origin',headers:{'Content-Type':'application/json'}});
-    if(!r.ok)throw new Error((await r.json()).error);
-    return r.json();
-}
-
-async function loadIDE(){
-    let repoId=window.location.pathname.split('/').pop();
-    try{
-        let result=await api('/workspace/create',{method:'POST',body:JSON.stringify({repo_id:repoId})});
-        workspaceId=result.workspace_id;
-        document.getElementById('ide-frame').src=result.vscode_url;
-        document.getElementById('info').innerHTML=`Workspace: ${workspaceId} | Send heartbeat every 30s`;
-        
-        // Send heartbeat every 30 seconds to keep container alive
-        heartbeatInterval=setInterval(async()=>{
-            try{
-                await api(`/workspace/heartbeat/${workspaceId}`,{method:'POST'});
-                console.log('Heartbeat sent');
-            }catch(e){
-                console.error('Heartbeat failed:',e);
-            }
-        },30000);
-        
-        // Monitor iframe unload (user closes tab)
-        window.addEventListener('beforeunload',()=>{
-            if(heartbeatInterval)clearInterval(heartbeatInterval);
-            navigator.sendBeacon(`/api/workspace/destroy/${workspaceId}`,JSON.stringify({}));
-        });
-    }catch(error){
-        document.getElementById('info').innerHTML=`Error: ${error.message}`;
-    }
-}
-
-async function closeAndDestroy(){
-    if(heartbeatInterval)clearInterval(heartbeatInterval);
-    if(workspaceId){
-        try{
-            await api(`/workspace/destroy/${workspaceId}`,{method:'POST'});
-            alert('Container destroyed!');
-        }catch(e){
-            console.error(e);
+        async function api(url, opts = {}) {
+            const response = await fetch('/api' + url, {
+                ...opts,
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Request failed');
+            return data;
         }
-    }
-    window.close();
-    // If window.close doesn't work, redirect to dashboard
-    window.location.href='/dashboard';
-}
 
-loadIDE();
-</script>
+        // ============================================================
+        // DESTROY FUNCTION - Called when tab closes
+        // ============================================================
+        async function destroyWorkspace() {
+            if (destroyed || !workspaceId) return;
+            destroyed = true;
+            
+            console.log('🧹 Destroying workspace:', workspaceId);
+            
+            try {
+                await api(`/workspace/destroy/${workspaceId}`, { method: 'POST' });
+                console.log('✅ Workspace destroyed');
+            } catch (error) {
+                // Fallback to beacon
+                navigator.sendBeacon(`/api/workspace/destroy/${workspaceId}`, JSON.stringify({}));
+            }
+            
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // ============================================================
+        // TAB CLOSE DETECTION - THE FIX
+        // ============================================================
+        // 1. Detect when user closes the tab
+        window.addEventListener('beforeunload', function() {
+            console.log('🚪 Tab closing, destroying workspace...');
+            destroyWorkspace();
+        });
+
+        // 2. Detect when user switches to another tab (may close later)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && !destroyed) {
+                console.log('👁️ Tab hidden');
+                // Destroy after 5 seconds if still hidden
+                setTimeout(() => {
+                    if (document.hidden && !destroyed) {
+                        console.log('⏰ Tab still hidden, destroying...');
+                        destroyWorkspace();
+                    }
+                }, 5000);
+            }
+        });
+
+        // 3. Periodic check - if container dies, clean up
+        setInterval(async function() {
+            if (!workspaceId || destroyed) return;
+            try {
+                const response = await fetch('/api/workspace/status/' + workspaceId, {
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (data.status === 'stopped' || data.status === 'none') {
+                    console.log('⚠️ Container stopped, cleaning up...');
+                    destroyed = true;
+                    window.location.reload();
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }, 10000);
+
+        // ============================================================
+        // LOAD IDE
+        // ============================================================
+        async function loadIDE() {
+            const repoId = window.location.pathname.split('/').pop();
+            
+            try {
+                const result = await api('/workspace/create', {
+                    method: 'POST',
+                    body: JSON.stringify({ repo_id: parseInt(repoId) })
+                });
+                
+                workspaceId = result.workspace_id;
+                document.getElementById('workspaceInfo').textContent = `Workspace: ${workspaceId}`;
+                
+                document.getElementById('ide-frame').src = result.vscode_url;
+                document.getElementById('ide-frame').onload = function() {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                };
+                
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }, 15000);
+                
+                // Heartbeat every 30 seconds
+                heartbeatInterval = setInterval(async () => {
+                    if (destroyed || !workspaceId) return;
+                    try {
+                        await api(`/workspace/heartbeat/${workspaceId}`, { method: 'POST' });
+                    } catch (error) {
+                        // Ignore
+                    }
+                }, 30000);
+                
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('workspaceInfo').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // ============================================================
+        // MANUAL DESTROY
+        // ============================================================
+        async function closeAndDestroy() {
+            if (!confirm('Close and destroy container?')) return;
+            await destroyWorkspace();
+            window.location.href = '/dashboard';
+        }
+
+        loadIDE();
+    </script>
 </body>
 </html>
